@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type AppMode = "portfolio" | "transforming" | "assistant";
 
@@ -15,22 +15,6 @@ const ModeContext = createContext<ModeContextType | null>(null);
 
 export function ModeProvider({ children }: { children: ReactNode }) {
     const [mode, setMode] = useState<AppMode>("portfolio");
-
-    // Persist mode in localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem("ark-mode");
-        if (saved === "assistant") {
-            setMode("assistant");
-        }
-    }, []);
-
-    useEffect(() => {
-        if (mode === "assistant") {
-            localStorage.setItem("ark-mode", "assistant");
-        } else if (mode === "portfolio") {
-            localStorage.removeItem("ark-mode");
-        }
-    }, [mode]);
 
     const triggerTransformation = () => {
         setMode("transforming");

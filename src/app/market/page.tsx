@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Activity, 
-  TrendingUp, 
-  TrendingDown, 
-  Globe, 
+import {
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  Globe,
   Newspaper,
   Plus,
   Search,
@@ -20,6 +20,7 @@ import { AIInsights } from '@/components/market/AIInsights';
 import { AddHoldingModal } from '@/components/market/AddHoldingModal';
 import { HUDCard } from '@/components/ui/HUDCard';
 import { GlowButton } from '@/components/ui/GlowButton';
+import { API_BASE } from '@/lib/utils';
 
 interface MarketCondition {
   condition: string;
@@ -39,7 +40,7 @@ export default function MarketPage() {
 
   const fetchMarketCondition = async () => {
     try {
-      const response = await fetch('/api/market/condition');
+      const response = await fetch(`${API_BASE}/api/market/condition`);
       const data = await response.json();
       if (data.success) {
         setMarketCondition(data.data);
@@ -77,11 +78,10 @@ export default function MarketPage() {
         <HUDCard>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-full ${
-                marketCondition.condition === 'Bullish' ? 'bg-emerald-400/20' :
+              <div className={`p-3 rounded-full ${marketCondition.condition === 'Bullish' ? 'bg-emerald-400/20' :
                 marketCondition.condition === 'Bearish' ? 'bg-red-400/20' :
-                'bg-yellow-400/20'
-              }`}>
+                  'bg-yellow-400/20'
+                }`}>
                 {marketCondition.condition === 'Bullish' ? (
                   <TrendingUp className="w-6 h-6 text-emerald-400" />
                 ) : marketCondition.condition === 'Bearish' ? (
@@ -159,7 +159,7 @@ export default function MarketPage() {
 
         {/* Right Column - AI Insights */}
         <div className="space-y-6">
-          <AIInsights />
+          <AIInsights isVisible={true} />
 
           {/* Quick Stats */}
           <HUDCard>
@@ -195,8 +195,8 @@ export default function MarketPage() {
       </div>
 
       {/* Add Holding Modal */}
-      <AddHoldingModal 
-        isOpen={showAddModal} 
+      <AddHoldingModal
+        isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
           // Refresh data
@@ -218,7 +218,7 @@ function MarketStatCard({ name, symbol, type }: MarketStatCardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/market/stock/${symbol}`)
+    fetch(`${API_BASE}/api/market/stock/${symbol}`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success) {
@@ -272,7 +272,7 @@ function NewsSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/market/news?query=stock%20market&num_articles=5')
+    fetch(`${API_BASE}/api/market/news?query=stock%20market&num_articles=5`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success) {

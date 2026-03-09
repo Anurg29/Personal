@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Percent, Briefcase } from 'lucide-react';
 import { HUDCard } from '@/components/ui/HUDCard';
+import { API_BASE } from '@/lib/utils';
 import { GlowButton } from '@/components/ui/GlowButton';
 
 interface PortfolioSummary {
@@ -35,7 +36,7 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
 
   const fetchPortfolio = async () => {
     try {
-      const response = await fetch('/api/portfolio');
+      const response = await fetch(`${API_BASE}/api/portfolio`);
       const data = await response.json();
       if (data.success) {
         setPortfolio(data.data);
@@ -66,7 +67,7 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
           <p className="text-sm text-jarvis-text/60 mb-4">
             Start building your portfolio by adding stocks, ETFs, or crypto
           </p>
-          <GlowButton variant="primary" onClick={() => {}}>
+          <GlowButton variant="primary" onClick={() => { }}>
             Add First Holding
           </GlowButton>
         </div>
@@ -105,9 +106,8 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
             <div className="flex-1">
               <div className="text-xs text-jarvis-text/60 mb-1">Total P&L</div>
               <div
-                className={`text-lg font-semibold flex items-center ${
-                  isProfit ? 'text-emerald-400' : 'text-red-400'
-                }`}
+                className={`text-lg font-semibold flex items-center ${isProfit ? 'text-emerald-400' : 'text-red-400'
+                  }`}
               >
                 {isProfit ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
                 ${Math.abs(portfolio.total_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -116,9 +116,8 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
             <div className="flex-1">
               <div className="text-xs text-jarvis-text/60 mb-1">Return %</div>
               <div
-                className={`text-lg font-semibold ${
-                  isProfit ? 'text-emerald-400' : 'text-red-400'
-                }`}
+                className={`text-lg font-semibold ${isProfit ? 'text-emerald-400' : 'text-red-400'
+                  }`}
               >
                 {isProfit ? '+' : ''}{portfolio.total_pnl_percent.toFixed(2)}%
               </div>
@@ -160,9 +159,8 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
           <div>
             <div className="text-xs text-jarvis-text/60 mb-1">Total P&L</div>
             <div
-              className={`text-xl font-bold flex items-center ${
-                isProfit ? 'text-emerald-400' : 'text-red-400'
-              }`}
+              className={`text-xl font-bold flex items-center ${isProfit ? 'text-emerald-400' : 'text-red-400'
+                }`}
             >
               {isProfit ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
               ${Math.abs(portfolio.total_pnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -171,9 +169,8 @@ export function PortfolioCard({ compact = false }: PortfolioCardProps) {
           <div>
             <div className="text-xs text-jarvis-text/60 mb-1">Return %</div>
             <div
-              className={`text-xl font-bold ${
-                isProfit ? 'text-emerald-400' : 'text-red-400'
-              }`}
+              className={`text-xl font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'
+                }`}
             >
               {isProfit ? '+' : ''}{portfolio.total_pnl_percent.toFixed(2)}%
             </div>

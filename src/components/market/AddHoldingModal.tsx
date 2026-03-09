@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { HUDCard } from '@/components/ui/HUDCard';
+import { API_BASE } from '@/lib/utils';
 import { GlowButton } from '@/components/ui/GlowButton';
 
 interface AddHoldingModalProps {
@@ -33,7 +34,7 @@ export function AddHoldingModal({ isOpen, onClose, onSuccess }: AddHoldingModalP
     setError('');
 
     try {
-      const response = await fetch('/api/portfolio/add', {
+      const response = await fetch(`${API_BASE}/api/portfolio/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,7 +58,7 @@ export function AddHoldingModal({ isOpen, onClose, onSuccess }: AddHoldingModalP
           sector: '',
           exchange: '',
         });
-        
+
         if (onSuccess) onSuccess();
         onClose();
       } else {

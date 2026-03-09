@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, TrendingUp, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { HUDCard } from '@/components/ui/HUDCard';
+import { API_BASE } from '@/lib/utils';
 
 interface PortfolioAnalysis {
   diversification_score: number;
@@ -21,27 +22,42 @@ interface PortfolioAnalysis {
   }>;
 }
 
-export function AIInsights() {
+interface AIInsightsProps {
+  isVisible: boolean;
+}
+
+export function AIInsights({ isVisible }: Readonly<AIInsightsProps>) {
   const [analysis, setAnalysis] = useState<PortfolioAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAnalysis();
-  }, []);
+    if (!isVisible) return;
 
-  const fetchAnalysis = async () => {
-    try {
-      const response = await fetch('/api/portfolio/analysis');
-      const data = await response.json();
-      if (data.success) {
-        setAnalysis(data.data);
+    async function fetchAnalysis() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`${API_BASE}/api/portfolio/analysis`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setAnalysis(data.data);
+        } else {
+          setError(data.message || 'Failed to fetch analysis');
+        }
+      } catch (error: any) {
+        console.error('Error fetching analysis:', error);
+        setError(error.message || 'An unexpected error occurred');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching analysis:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    fetchAnalysis();
+  }, [isVisible]);
 
   if (loading) {
     return (

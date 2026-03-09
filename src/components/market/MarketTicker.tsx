@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Activity, Globe, Coins, Droplet, Bitcoin } from 'lucide-react';
+import { API_BASE } from '@/lib/utils';
 import { HUDCard } from '@/components/ui/HUDCard';
 
 interface MarketData {
@@ -32,7 +33,7 @@ export function MarketTicker() {
 
   const fetchMarketOverview = async () => {
     try {
-      const response = await fetch('/api/market/overview');
+      const response = await fetch(`${API_BASE}/api/market/overview`);
       const data = await response.json();
       if (data.success) {
         setOverview(data.data);

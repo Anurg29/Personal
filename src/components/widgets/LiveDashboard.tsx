@@ -94,10 +94,10 @@ function MiniCalendar() {
                     <div
                         key={i}
                         className={`text-center text-[9px] font-mono rounded-sm py-[2px] ${day === today
-                                ? "bg-[#00d4ff]/20 text-[#00d4ff] font-bold shadow-[0_0_6px_rgba(0,212,255,0.3)]"
-                                : day
-                                    ? "text-[#94a3b8]/60"
-                                    : ""
+                            ? "bg-[#00d4ff]/20 text-[#00d4ff] font-bold shadow-[0_0_6px_rgba(0,212,255,0.3)]"
+                            : day
+                                ? "text-[#94a3b8]/60"
+                                : ""
                             }`}
                     >
                         {day || ""}
@@ -226,7 +226,7 @@ export function LiveDashboard() {
                 <div className="flex items-start justify-between">
                     <div>
                         <p className="text-[#00d4ff]/50 text-[10px] font-mono tracking-[0.2em] uppercase mb-1">
-                            {greeting}, Sir
+                            Hey, {greeting}
                         </p>
                         <div className="font-orbitron text-[28px] font-bold text-[#e2e8f0] tracking-wider leading-none">
                             {time.toLocaleTimeString("en-US", {

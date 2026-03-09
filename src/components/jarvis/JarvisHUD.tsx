@@ -424,7 +424,7 @@ export function JarvisHUD() {
                                 <button key={c} className="j-chip" onClick={() => sendCmd(
                                     c === "STATUS" ? "System status report" : c === "DIAGNOSTICS" ? "Run full diagnostics" :
                                         c === "CAREFLOW" ? "Show CareFlow health" : c === "THREAT" ? "Threat scan" :
-                                            c === "NETWORK" ? "Network analysis" : "Good morning M.A.X."
+                                            c === "NETWORK" ? "Network analysis" : "Hey M.A.X."
                                 )}>{c}</button>
                             ))}
                         </div>

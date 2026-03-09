@@ -7,11 +7,8 @@ out/
 tsconfig.tsbuildinfo
 
 # Environment files (SECRETS - never commit)
-.env
-.env.local
-.env.production
-backend/.env
-backend/.env.local
+.env*
+backend/.env*
 
 # Database
 backend/portfolio.db
@@ -34,3 +31,4 @@ __pycache__/
 
 # IDE
 .qoder/
+*.env.example

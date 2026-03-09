@@ -9,17 +9,19 @@ import { CommandPalette } from "@/components/command/CommandPalette";
 import { ParticleBackground } from "@/components/widgets/ParticleBackground";
 import { StickyNotes } from "@/components/widgets/StickyNotes";
 import { PomodoroTimer } from "@/components/widgets/PomodoroTimer";
+import { AuthGate } from "@/components/auth/AuthGate";
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
     const { mode } = useMode();
+    const isAssistant = mode === "assistant";
 
-    return (
+    const content = (
         <>
             {/* 3D Particle background in assistant mode */}
-            {mode === "assistant" && <ParticleBackground />}
+            {isAssistant && <ParticleBackground />}
 
             {/* HUD background only in assistant mode */}
-            {mode === "assistant" && <HUDBackground />}
+            {isAssistant && <HUDBackground />}
 
             {/* Transformation animation overlay */}
             <TransformAnimation isActive={mode === "transforming"} />
@@ -36,12 +38,19 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
             <CommandPalette />
 
             {/* Sticky Notes — only in assistant mode */}
-            {mode === "assistant" && <StickyNotes />}
+            {isAssistant && <StickyNotes />}
 
             {/* Pomodoro Timer — only in assistant mode */}
-            {mode === "assistant" && <PomodoroTimer />}
+            {isAssistant && <PomodoroTimer />}
         </>
     );
+
+    // Wrap assistant mode with authentication gate
+    if (isAssistant) {
+        return <AuthGate>{content}</AuthGate>;
+    }
+
+    return content;
 }
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {

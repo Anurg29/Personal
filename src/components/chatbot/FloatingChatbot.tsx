@@ -12,6 +12,7 @@ interface Message {
 
 const TRIGGER_PHRASES = ["hello max", "hi max", "hey max", "hola max"];
 const EXIT_PHRASES = ["goodbye max", "bye max", "exit", "logout", "log out"];
+const ACCESS_CODE = "2918";
 
 function isTriggered(text: string) {
     return TRIGGER_PHRASES.some((p) => text.toLowerCase().trim().includes(p));
@@ -35,6 +36,7 @@ export function FloatingChatbot() {
     ]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
+    const [awaitingPin, setAwaitingPin] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -63,6 +65,38 @@ export function FloatingChatbot() {
         setIsTyping(true);
 
         setTimeout(() => {
+            // If we're waiting for PIN input
+            if (awaitingPin) {
+                if (userMsg === ACCESS_CODE) {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            role: "max",
+                            content:
+                                "🔐 Access code verified. Initiating **M.A.X. Protocol**...\n\n*Multi-Access eXperience activating...*",
+                        },
+                    ]);
+                    setIsTyping(false);
+                    setAwaitingPin(false);
+
+                    setTimeout(() => {
+                        setIsOpen(false);
+                        triggerTransformation();
+                    }, 1500);
+                } else {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            role: "max",
+                            content: "❌ Access denied. Incorrect code. Try again or type something else to cancel.",
+                        },
+                    ]);
+                    setIsTyping(false);
+                    setAwaitingPin(false);
+                }
+                return;
+            }
+
             // Check for transformation trigger
             if (isTriggered(userMsg) && mode === "portfolio") {
                 setMessages((prev) => [
@@ -70,15 +104,11 @@ export function FloatingChatbot() {
                     {
                         role: "max",
                         content:
-                            "🔐 Voice print recognized. Initiating **M.A.X. Protocol**...\n\n*Multi-Access eXperience activating...*",
+                            "🔒 Voice print recognized. Please enter your **access code** to activate M.A.X. Protocol:",
                     },
                 ]);
                 setIsTyping(false);
-
-                setTimeout(() => {
-                    setIsOpen(false);
-                    triggerTransformation();
-                }, 1500);
+                setAwaitingPin(true);
                 return;
             }
 
@@ -114,7 +144,7 @@ export function FloatingChatbot() {
                         "I'm **M.A.X.** — Multi-Access eXperience. Your personal digital command center, sir. I unify all your services in one place.";
                 } else {
                     response =
-                        "I'm here to help navigate your command center. Use the service tiles above to access your apps, or head to J.A.R.V.I.S. for AI conversations!";
+                        "I'm here to help navigate your command center. Use the service tiles above to access your apps, or head to the HUD for system monitoring!";
                 }
             } else {
                 if (lower.includes("who") || lower.includes("about")) {

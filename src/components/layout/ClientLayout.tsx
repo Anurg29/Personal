@@ -9,13 +9,12 @@ import { CommandPalette } from "@/components/command/CommandPalette";
 import { ParticleBackground } from "@/components/widgets/ParticleBackground";
 import { StickyNotes } from "@/components/widgets/StickyNotes";
 import { PomodoroTimer } from "@/components/widgets/PomodoroTimer";
-import { AuthGate } from "@/components/auth/AuthGate";
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
     const { mode } = useMode();
     const isAssistant = mode === "assistant";
 
-    const content = (
+    return (
         <>
             {/* 3D Particle background in assistant mode */}
             {isAssistant && <ParticleBackground />}
@@ -44,13 +43,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
             {isAssistant && <PomodoroTimer />}
         </>
     );
-
-    // Wrap assistant mode with authentication gate
-    if (isAssistant) {
-        return <AuthGate>{content}</AuthGate>;
-    }
-
-    return content;
 }
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {

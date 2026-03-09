@@ -48,40 +48,64 @@ const skills = [
 
 const projects = [
     {
-        title: "CareFlow",
-        subtitle: "Hospital Queue Management System",
-        description:
-            "Real-time hospital queue management with patient tracking, doctor dashboards, bed management, and automated notifications via WebSocket.",
-        tech: ["Django", "React", "PostgreSQL", "WebSocket", "REST API"],
-        gradient: "from-cyan-500/20 to-blue-600/20",
-        border: "border-cyan-500/30",
-    },
-    {
-        title: "Personal Hub (A.R.K.)",
+        title: "Personal Hub (M.A.X.)",
         subtitle: "AI-Powered Personal Dashboard",
         description:
-            "Full-stack personal command center with J.A.R.V.I.S. AI assistant, GitHub portfolio, market tracking, and Google Suite integration.",
-        tech: ["Next.js", "TypeScript", "FastAPI", "LangChain", "Tailwind"],
+            "Full-stack personal command center with M.A.X. AI assistant, secure PIN access, and interactive 3D portfolio.",
+        tech: ["Next.js", "TypeScript", "Tailwind", "Framer Motion"],
         gradient: "from-indigo-500/20 to-purple-600/20",
         border: "border-indigo-500/30",
+        link: "https://github.com/Anurg29/Personal",
+    },
+    {
+        title: "CareFlow",
+        subtitle: "Hospital Management System",
+        description:
+            "A comprehensive hospital queue management system with patient tracking, doctor dashboards, and bed management.",
+        tech: ["JavaScript", "React", "Management System"],
+        gradient: "from-cyan-500/20 to-blue-600/20",
+        border: "border-cyan-500/30",
+        link: "https://github.com/Anurg29/careflow-hospital-management",
     },
     {
         title: "PayFlow",
-        subtitle: "Payment Gateway System",
+        subtitle: "Payment Gateway Hub",
         description:
-            "High-throughput payment gateway with QR-based transactions, merchant dashboards, and real-time payment processing.",
-        tech: ["React", "Node.js", "MongoDB", "QR Code", "REST API"],
+            "High-throughput payment gateway showcasing modern architectural patterns and robust REST API design.",
+        tech: ["Python", "Gateway API", "Transactions"],
         gradient: "from-emerald-500/20 to-teal-600/20",
         border: "border-emerald-500/30",
+        link: "https://github.com/Anurg29/PayFlow",
     },
     {
-        title: "Market Intelligence",
-        subtitle: "Portfolio & Market Tracker",
+        title: "Blood Buddy",
+        subtitle: "Blood Donation Network",
         description:
-            "AI-powered market tracking with portfolio management, technical analysis, real-time data from Yahoo Finance, and AI insights.",
-        tech: ["Python", "Yahoo Finance", "SQLite", "Recharts", "AI Analysis"],
+            "A platform to connect blood donors with recipients, simplifying the process of finding the right blood type in emergencies.",
+        tech: ["JavaScript", "Frontend", "Web App"],
+        gradient: "from-red-500/20 to-orange-600/20",
+        border: "border-red-500/30",
+        link: "https://github.com/Anurg29/Blood-Buddy",
+    },
+    {
+        title: "Medibot",
+        subtitle: "AI Medical Assistant",
+        description:
+            "A Python-based artificial intelligence chatbot designed to assist with medical queries and provide reliable info.",
+        tech: ["Python", "AI", "Chatbot"],
+        gradient: "from-rose-500/20 to-pink-600/20",
+        border: "border-rose-500/30",
+        link: "https://github.com/Anurg29/medibot",
+    },
+    {
+        title: "ADAS Collision Alert",
+        subtitle: "Driver Assistance System",
+        description:
+            "An advanced driver assistance system for real-time car collision alerts, improving road safety.",
+        tech: ["JavaScript", "Sensors", "Real-Time"],
         gradient: "from-amber-500/20 to-orange-600/20",
         border: "border-amber-500/30",
+        link: "https://github.com/Anurg29/ADAS---Car-collision-Alert-",
     },
 ];
 
@@ -183,7 +207,7 @@ export function PortfolioHome() {
                         transition={{ delay: 1, duration: 0.6 }}
                     >
                         {[
-                            { icon: Github, href: "https://github.com/Anurag29", label: "GitHub" },
+                            { icon: Github, href: "https://github.com/Anurg29", label: "GitHub" },
                             {
                                 icon: Linkedin,
                                 href: "https://linkedin.com/in/anuragrokade",
@@ -389,10 +413,11 @@ export function PortfolioHome() {
                                 variants={item}
                                 className={`group relative rounded-xl border ${project.border} overflow-hidden hover:shadow-[0_0_30px_rgba(0,212,255,0.08)] transition-all duration-500`}
                             >
+                                <a href={project.link} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-10" />
                                 <div
                                     className={`absolute inset-0 bg-gradient-to-br ${project.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                                 />
-                                <div className="relative p-6">
+                                <div className="relative p-6 z-20 pointer-events-none">
                                     <div className="flex items-start justify-between mb-3">
                                         <div>
                                             <h3 className="font-orbitron text-base font-semibold text-[#e2e8f0] tracking-wide group-hover:text-[#00d4ff] transition-colors">
@@ -500,7 +525,7 @@ export function PortfolioHome() {
                             Say Hello
                         </a>
                         <a
-                            href="https://github.com/Anurag29"
+                            href="https://github.com/Anurg29"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-6 py-3 rounded-lg border border-[#00d4ff]/30 text-[#00d4ff] font-medium text-sm tracking-wider hover:bg-[#00d4ff]/10 transition-all duration-300"

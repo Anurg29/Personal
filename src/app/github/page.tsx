@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ProfileCard } from "@/components/github/ProfileCard";
 import { RepoGrid } from "@/components/github/RepoGrid";
 import { SectionLabel } from "@/components/ui/SectionLabel";
+import { fetchGithubData } from "@/lib/github";
 import { GithubProfile, GithubRepo } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
@@ -16,13 +17,11 @@ export default function GitHubPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/github");
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
+        const data = await fetchGithubData();
         setProfile(data.profile);
         setRepos(data.repos);
       } catch {
-        setError("Failed to load GitHub data. Check your API token.");
+        setError("Failed to load GitHub data. Check your network or GitHub API limits.");
       } finally {
         setLoading(false);
       }

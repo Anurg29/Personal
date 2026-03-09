@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-jarvis-base: #020817;
+  --color-jarvis-surface: #0a0f1a;
+  --color-jarvis-elevated: #0d1525;
+  --color-jarvis-border: rgba(0, 212, 255, 0.15);
+  --color-jarvis-cyan: #00d4ff;
+  --color-jarvis-blue: #0066ff;
+  --color-jarvis-text: #e2e8f0;
+  --color-jarvis-muted: #64748b;
+
+  --shadow-glow-sm: 0 0 10px rgba(0, 212, 255, 0.2);
+  --shadow-glow-md: 0 0 20px rgba(0, 212, 255, 0.35);
+  --shadow-glow-lg: 0 0 40px rgba(0, 212, 255, 0.5);
+
+  --font-orbitron: "Orbitron", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --animate-scanline: scanline 4s linear infinite;
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
+  --animate-typewriter: typewriter 2s steps(30) forwards;
+  --animate-flicker: flicker 0.15s ease-in-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(0, 212, 255, 0.45); }
+}
+
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+}
+
+body {
+  background-color: #020817;
+  color: #e2e8f0;
+  font-family: "Inter", sans-serif;
+}
+
+::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: #fff;
+}

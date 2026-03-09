@@ -1,0 +1,123 @@
+/* ═══════════════════════ JARVIS HUD STYLES ═══════════════════════ */
+
+/* ── LAYOUT ── */
+.j-shell { position:relative;z-index:10;width:100vw;height:100vh;display:flex;flex-direction:column;gap:6px;padding:8px }
+
+/* ── SCAN LINES ── */
+.j-scanlines { position:fixed;inset:0;z-index:999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0,rgba(0,0,0,.04) 1px,transparent 1px,transparent 4px);
+  animation:j-scan 12s linear infinite }
+@keyframes j-scan{0%{background-position:0 0}100%{background-position:0 200px}}
+
+/* ── HEX GRID BG ── */
+.j-hexbg { position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='104'%3E%3Cpath d='M30 2 L58 18 L58 50 L30 66 L2 50 L2 18 Z' fill='none' stroke='%2300d4ff' stroke-width='1'/%3E%3Cpath d='M30 70 L58 86 L58 118 L30 134 L2 118 L2 86 Z' fill='none' stroke='%2300d4ff' stroke-width='1'/%3E%3C/svg%3E") }
+
+/* ── VIGNETTE ── */
+.j-vig { position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 90% 85% at 50% 50%,transparent 35%,rgba(0,0,0,.92) 100%) }
+
+/* ── TOP BAR ── */
+.j-topbar { flex:0 0 52px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  border-bottom:1px solid rgba(0,212,255,.5);padding:0 12px 8px;position:relative }
+.j-topbar::after { content:'';position:absolute;bottom:-1px;left:0;width:60%;height:2px;
+  background:linear-gradient(90deg,#00d4ff,transparent);animation:j-tl 4s ease-in-out infinite alternate }
+@keyframes j-tl{from{width:25%}to{width:80%}}
+
+/* ── LOGO ── */
+.j-logo { font-family:var(--font-orbitron),sans-serif;font-size:15px;font-weight:900;letter-spacing:8px;color:#00d4ff;
+  text-shadow:0 0 20px #00d4ff,0 0 50px #006080;animation:j-logop 2s ease-in-out infinite }
+@keyframes j-logop{0%,100%{text-shadow:0 0 15px #00d4ff,0 0 40px #006080}50%{text-shadow:0 0 35px #00d4ff,0 0 70px #00d4ff,0 0 100px #006080}}
+
+/* ── BADGES ── */
+.j-badge { font-family:var(--font-mono),monospace;font-size:9px;padding:3px 10px;border:1px solid rgba(0,212,255,.5);
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);letter-spacing:2px }
+.j-badge-green { color:#00ff9d;border-color:rgba(0,255,157,.35);background:rgba(0,255,157,.06);text-shadow:0 0 8px #00ff9d }
+.j-badge-gold { color:#ffb300;border-color:rgba(255,179,0,.35);background:rgba(255,179,0,.06) }
+.j-sdot { width:7px;height:7px;border-radius:50%;background:#00ff9d;box-shadow:0 0 10px #00ff9d;animation:j-blink 1.2s ease-in-out infinite }
+@keyframes j-blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── MAIN GRID ── */
+.j-main { flex:1;display:grid;grid-template-columns:200px 1fr 200px;grid-template-rows:1fr 1fr;gap:6px;min-height:0 }
+
+/* ── PANEL ── */
+.j-pn { background:rgba(1,22,36,.82);border:1px solid rgba(0,212,255,.14);position:relative;overflow:hidden;backdrop-filter:blur(10px) }
+.j-pn::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,#00d4ff,transparent);opacity:.5 }
+.j-pn-lbl { font-family:var(--font-mono),monospace;font-size:8px;letter-spacing:3px;color:rgba(194,234,248,.4);
+  padding:8px 10px 0;text-transform:uppercase }
+
+/* ── ARC REACTOR ── */
+.j-reactor { position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center }
+.j-ro { position:absolute;border-radius:50%;border:1px solid #006080;animation:j-spin linear infinite }
+.j-ro1{width:160px;height:160px;animation-duration:18s;opacity:.25}
+.j-ro2{width:125px;height:125px;animation-duration:10s;animation-direction:reverse;opacity:.35;border-color:#00d4ff}
+.j-ro3{width:90px;height:90px;animation-duration:6s;opacity:.5;border-style:dashed}
+.j-ro4{width:58px;height:58px;animation-duration:3.5s;animation-direction:reverse;opacity:.7;border-width:2px}
+.j-ro::after { content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:#00d4ff;box-shadow:0 0 15px #00d4ff,0 0 30px #00d4ff }
+@keyframes j-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+.j-core { position:absolute;width:44px;height:44px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0%,#00d4ff 40%,rgba(0,80,120,.4) 70%,transparent 100%);
+  box-shadow:0 0 50px #00d4ff,0 0 100px #006080,inset 0 0 20px rgba(255,255,255,.5);
+  animation:j-cp 2s ease-in-out infinite;z-index:2 }
+@keyframes j-cp{0%,100%{transform:scale(1);box-shadow:0 0 40px #00d4ff,0 0 80px #006080}50%{transform:scale(1.15);box-shadow:0 0 70px #00d4ff,0 0 130px #00d4ff,0 0 200px #006080}}
+
+.j-halo { position:absolute;border-radius:50%;border:1px solid rgba(0,212,255,.6);animation:j-hr 2.4s ease-out infinite }
+.j-halo:nth-child(2){animation-delay:.8s}
+.j-halo:nth-child(3){animation-delay:1.6s}
+@keyframes j-hr{0%{width:40px;height:40px;opacity:.9}100%{width:170px;height:170px;opacity:0}}
+
+/* ── RADAR ── */
+.j-rsweep { transform-origin:65px 65px;animation:j-rspin 3s linear infinite }
+@keyframes j-rspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.j-rblip { animation:j-bp 1.5s ease-in-out infinite }
+.j-rblip2 { animation:j-bp 2s ease-in-out infinite .5s }
+.j-rblip3 { animation:j-bp 1.8s ease-in-out infinite 1s }
+@keyframes j-bp{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── ACTIVITY LOG ── */
+.j-act-item { display:flex;gap:6px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(0,212,255,.05);animation:j-ai .3s ease-out both }
+@keyframes j-ai{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+
+/* ── CMD INPUT ── */
+.j-cmd-field { flex:1;background:transparent;border:none;outline:none;color:#c2eaf8;font-family:var(--font-mono),monospace;font-size:13px;
+  caret-color:#00d4ff;padding:2px 0;border-bottom:1px solid rgba(0,212,255,.5) }
+.j-cmd-field::placeholder{color:rgba(194,234,248,.4)}
+.j-cmd-field:focus{border-bottom-color:#00d4ff;box-shadow:0 2px 0 -1px #00d4ff}
+
+/* ── CHIPS ── */
+.j-chip { font-family:var(--font-mono),monospace;font-size:9px;color:rgba(194,234,248,.4);border:1px solid rgba(0,212,255,.14);
+  padding:3px 12px;cursor:pointer;letter-spacing:1px;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);transition:all .2s }
+.j-chip:hover{color:#00d4ff;border-color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 12px rgba(0,212,255,.2)}
+
+/* ── MIC BUTTON ── */
+.j-mic-btn { width:54px;height:54px;border-radius:50%;border:2px solid #00d4ff;
+  background:radial-gradient(circle,rgba(0,212,255,.15),transparent);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 0 20px rgba(0,212,255,.4),inset 0 0 15px rgba(0,212,255,.07);transition:all .2s;position:relative }
+.j-mic-btn::before { content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(0,212,255,.25);animation:j-micring 2s ease-in-out infinite }
+@keyframes j-micring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:.2}}
+.j-mic-btn:hover{transform:scale(1.1);box-shadow:0 0 40px #00d4ff,inset 0 0 25px rgba(0,212,255,.2)}
+.j-mic-btn.on{border-color:#ff3b3b;box-shadow:0 0 30px rgba(255,59,59,.5);animation:j-micpulse .7s ease-in-out infinite}
+@keyframes j-micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+/* ── CHAT ── */
+.j-msg { display:flex;gap:8px;animation:j-msgin .35s ease-out both }
+@keyframes j-msgin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.j-cblink { display:inline-block;width:6px;height:11px;background:#00d4ff;margin-left:2px;vertical-align:middle;animation:j-blink .8s step-end infinite }
+
+/* ── STAT CARDS ── */
+.j-stat-card { flex:1;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.14);padding:8px 10px;
+  display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden }
+.j-stat-card::before { content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:#00d4ff;box-shadow:0 0 10px #00d4ff }
+.j-stat-card.go::before { background:#00ff9d;box-shadow:0 0 10px #00ff9d }
+.j-stat-card.warn::before { background:#ffb300;box-shadow:0 0 10px #ffb300 }
+
+/* ── CORNER DECORATIONS ── */
+.j-cdeco { position:fixed;width:70px;height:70px;z-index:5;pointer-events:none }
+.j-cdeco svg line { stroke:#00d4ff;stroke-width:1.5;opacity:.6 }
+.j-cd1{top:6px;left:6px}.j-cd2{top:6px;right:6px;transform:scaleX(-1)}.j-cd3{bottom:6px;left:6px;transform:scaleY(-1)}.j-cd4{bottom:6px;right:6px;transform:scale(-1)}
+
+/* ── CHART GRID ── */
+.j-chart-wrap { padding:4px 10px 8px;position:relative;background:rgba(0,212,255,.02);border:1px solid rgba(0,212,255,.14);margin:0 6px }

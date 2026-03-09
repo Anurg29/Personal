@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment files (SECRETS - never commit)
+.env
+.env.local
+.env.production
+backend/.env
+backend/.env.local
+
+# Database
+backend/portfolio.db
+*.db
+
+# Google OAuth tokens/credentials (SENSITIVE)
+backend/token.json
+backend/credentials.json
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/routers/__pycache__/
+backend/tools/__pycache__/
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+
+# IDE
+.qoder/

@@ -9,7 +9,6 @@ import {
     Code2,
     Brain,
     Server,
-    Wrench,
     ChevronDown,
 } from "lucide-react";
 
@@ -37,12 +36,6 @@ const skills = [
         icon: Brain,
         items: ["Hugging Face", "TensorFlow", "PyTorch", "LangChain", "OpenAI"],
         color: "#f59e0b",
-    },
-    {
-        category: "DevOps & Tools",
-        icon: Wrench,
-        items: ["Git", "Docker", "Linux", "AWS", "GitHub Actions", "VS Code"],
-        color: "#ef4444",
     },
 ];
 
@@ -96,16 +89,6 @@ const projects = [
         gradient: "from-rose-500/20 to-pink-600/20",
         border: "border-rose-500/30",
         link: "https://github.com/Anurg29/medibot",
-    },
-    {
-        title: "ADAS Collision Alert",
-        subtitle: "Driver Assistance System",
-        description:
-            "An advanced driver assistance system for real-time car collision alerts, improving road safety.",
-        tech: ["JavaScript", "Sensors", "Real-Time"],
-        gradient: "from-amber-500/20 to-orange-600/20",
-        border: "border-amber-500/30",
-        link: "https://github.com/Anurg29/ADAS---Car-collision-Alert-",
     },
 ];
 

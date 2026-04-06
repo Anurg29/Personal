@@ -24,7 +24,11 @@ async def get_github_data():
     if profile_res.status_code != 200 or repos_res.status_code != 200:
         error_msg = f"Profile={profile_res.status_code}:{profile_res.text}, Repos={repos_res.status_code}:{repos_res.text}"
         print("GITHUB API ERR: ", error_msg)
-        raise HTTPException(status_code=502, detail=f"Failed to fetch GitHub data: {error_msg}")
+        return {
+            "profile": {"name": "Auth Error", "bio": "Please check your GITHUB_TOKEN in backend/.env", "avatar_url": ""},
+            "repos": [],
+            "events": []
+        }
 
     return {
         "profile": profile_res.json(),

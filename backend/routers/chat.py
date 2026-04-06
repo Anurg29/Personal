@@ -6,10 +6,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from langchain_groq import ChatGroq
 from langchain.tools import tool
 
-from config import HUGGINGFACE_API_KEY
+from config import GROQ_API_KEY
 
 router = APIRouter(tags=["chat"])
 
@@ -35,9 +35,10 @@ Market Capabilities:
 
 Keep responses well-formatted with markdown when appropriate. Use data tools to provide accurate, up-to-date information."""
 
-HF_MODELS = [
-    "mistralai/Mistral-7B-Instruct-v0.3",
-    "microsoft/Phi-3-mini-4k-instruct",
+GROQ_MODELS = [
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768"
 ]
 
 # Market data tools for LangChain
@@ -140,6 +141,19 @@ def get_market_news(query: str = "stock market") -> list:
     except Exception as e:
         return []
 
+@tool
+def get_github_activity() -> dict:
+    """Fetch Anurag's latest GitHub profile, public repositories, and recent push events/commits.
+    Use this when the user asks about their recent coding activity, their GitHub account, or what they worked on recently."""
+    try:
+        response = httpx.get("http://localhost:8000/api/github", timeout=10.0)
+        if response.status_code == 200:
+            data = response.json()
+            return {"success": True, "data": data}
+        return {"success": False, "error": f"API returned {response.status_code}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 MARKET_TOOLS = [
     get_market_overview,
     get_market_condition,
@@ -148,18 +162,18 @@ MARKET_TOOLS = [
     get_portfolio_summary,
     get_portfolio_analysis,
     get_market_news,
+    get_github_activity,
 ]
 
 
-def _build_llm(model_id: str) -> ChatHuggingFace:
-    llm = HuggingFaceEndpoint(
-        repo_id=model_id,
-        huggingfacehub_api_token=HUGGINGFACE_API_KEY,
-        max_new_tokens=1024,
+def _build_llm(model_id: str) -> ChatGroq:
+    chat = ChatGroq(
+        model_name=model_id,
+        api_key=GROQ_API_KEY,
         temperature=0.7,
+        max_tokens=1024
     )
     # Bind tools to LLM
-    chat = ChatHuggingFace(llm=llm)
     chat = chat.bind_tools(MARKET_TOOLS)
     return chat
 
@@ -185,12 +199,12 @@ def _to_langchain_messages(messages: list[ChatMessageIn]):
 
 @router.post("/chat")
 async def chat_stream(req: ChatRequest):
-    if not HUGGINGFACE_API_KEY:
-        raise HTTPException(status_code=500, detail="Hugging Face API key not configured")
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Groq API key not configured")
 
     lc_messages = _to_langchain_messages(req.messages)
 
-    for model_id in HF_MODELS:
+    for model_id in GROQ_MODELS:
         try:
             chat = _build_llm(model_id)
             return StreamingResponse(
@@ -203,12 +217,12 @@ async def chat_stream(req: ChatRequest):
 
     raise HTTPException(
         status_code=503,
-        detail="AI models are currently loading. Please try again in a moment.",
+        detail="AI models are currently offline. Please try again.",
     )
 
 
 async def _stream_langchain(
-    chat: ChatHuggingFace, messages: list
+    chat: ChatGroq, messages: list
 ) -> AsyncGenerator[bytes, None]:
     """Stream LangChain response in OpenAI-compatible SSE format."""
     try:

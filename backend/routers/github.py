@@ -19,7 +19,7 @@ async def get_github_data():
     }
 
     async with httpx.AsyncClient() as client:
-        profile_res, repos_res = await _fetch_parallel(client, headers)
+        profile_res, repos_res, events_res = await _fetch_parallel(client, headers)
 
     if profile_res.status_code != 200 or repos_res.status_code != 200:
         raise HTTPException(status_code=502, detail="Failed to fetch GitHub data")
@@ -27,8 +27,8 @@ async def get_github_data():
     return {
         "profile": profile_res.json(),
         "repos": repos_res.json(),
+        "events": events_res.json() if events_res.status_code == 200 else [],
     }
-
 
 async def _fetch_parallel(client: httpx.AsyncClient, headers: dict):
     import asyncio
@@ -40,8 +40,14 @@ async def _fetch_parallel(client: httpx.AsyncClient, headers: dict):
     )
     repos_task = client.get(
         f"{GITHUB_API}/users/{GITHUB_USERNAME}/repos",
-        params={"sort": "stars", "direction": "desc", "per_page": 12},
+        params={"sort": "updated", "direction": "desc", "per_page": 5},
         headers=headers,
         timeout=10.0,
     )
-    return await asyncio.gather(profile_task, repos_task)
+    events_task = client.get(
+        f"{GITHUB_API}/users/{GITHUB_USERNAME}/events",
+        params={"per_page": 10},
+        headers=headers,
+        timeout=10.0,
+    )
+    return await asyncio.gather(profile_task, repos_task, events_task)

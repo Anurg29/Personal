@@ -127,8 +127,8 @@ export function AIInsights({ isVisible }: Readonly<AIInsightsProps>) {
           </div>
           <div>
             <div className="text-xs text-jarvis-text/60 mb-1">Total Return</div>
-            <div className={`text-sm font-semibold ${analysis.total_return >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {analysis.total_return >= 0 ? '+' : ''}{analysis.total_return.toFixed(2)}%
+            <div className={`text-sm font-semibold ${typeof analysis.total_return === 'number' ? (analysis.total_return >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-jarvis-text/60'}`}>
+              {typeof analysis.total_return === 'number' ? `${analysis.total_return >= 0 ? '+' : ''}${analysis.total_return.toFixed(2)}%` : 'N/A'}
             </div>
           </div>
         </div>

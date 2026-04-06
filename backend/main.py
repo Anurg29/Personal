@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import FRONTEND_URL
-from routers import github, chat, gmail, calendar, drive, google_auth_router, market
+from routers import github, chat, gmail, calendar, drive, google_auth_router, market, briefing, dashboard
 
 app = FastAPI(title="Personal Hub API")
 
@@ -20,6 +20,8 @@ app.include_router(gmail.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
 app.include_router(drive.router, prefix="/api")
 app.include_router(market.router, prefix="")  # Market router already has /api prefix
+app.include_router(briefing.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
 
 
 @app.get("/api/health")

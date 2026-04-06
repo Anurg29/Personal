@@ -88,8 +88,8 @@ function useWeather() {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     useEffect(() => {
         const fallback = (): WeatherData => ({
-            temp: 28, feels_like: 30, humidity: 65, wind_speed: 12, description: "partly cloudy",
-            icon: "02d", city: "Pune", country: "IN",
+            temp: 14, feels_like: 12, humidity: 65, wind_speed: 18, description: "overcast",
+            icon: "04d", city: "Markham, Ontario", country: "CA",
             sunrise: Math.floor(Date.now() / 1000) - 3600, sunset: Math.floor(Date.now() / 1000) + 3600,
         });
         const fetchW = async () => {

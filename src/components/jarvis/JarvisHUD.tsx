@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./jarvis-hud.css";
 import { JarvisParticles } from "./JarvisParticles";
+import { HackerText } from "./HackerText";
+import { HolographicGlobe } from "./HolographicGlobe";
+import { AudioVisualizerRing } from "./AudioVisualizerRing";
 import { SparklineChart, HealthChart } from "./SparklineChart";
 import {
     useBattery, useClock, useWeather, rnd, getWeatherIcon, fmtTime,
@@ -109,11 +112,23 @@ export function JarvisHUD() {
     const [activities, setActivities] = useState<ActivityEvent[]>([]);
     const [cmdInput, setCmdInput] = useState("");
     const [listening, setListening] = useState(false);
+    const [isAIResponding, setIsAIResponding] = useState(false);
+    
+    const [dashData, setDashData] = useState<{ tasks: any[]; strategies: any[] }>({
+        tasks: [], strategies: []
+    });
+    const [gitEvent, setGitEvent] = useState<any>(null);
+
     const chatRef = useRef<HTMLDivElement>(null);
     const respIdx = useRef(0);
     const recogRef = useRef<ReturnType<typeof Object> | null>(null);
 
     // Init activity log + voice
+    const addActivity = useCallback((text: string, color: string) => {
+        const now = new Date().toTimeString().slice(0, 8);
+        setActivities((p) => [{ text, color, time: now }, ...p].slice(0, 12));
+    }, []);
+    
     useEffect(() => {
         const initItems = ["BOOT COMPLETE", "VOICE AUTH OK", "AI MODEL READY", "CAREFLOW SYNC", "NETWORK MAPPED"];
         const now = new Date().toTimeString().slice(0, 8);
@@ -125,15 +140,82 @@ export function JarvisHUD() {
         if (SR) {
             const r = new SR();
             r.lang = "en-US";
+            r.continuous = true;
             r.interimResults = false;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            r.onresult = (e: any) => { const t = e.results[0][0].transcript; setCmdInput(t); sendCmd(t); };
+            r.onresult = (e: any) => { 
+                const transcript = e.results[e.results.length - 1][0].transcript.trim();
+                const lowerT = transcript.toLowerCase();
+                
+                if (lowerT.includes("hey max") || lowerT.includes("hey macs") || lowerT.includes("hay max")) {
+                    setCmdInput(transcript);
+                    setMessages((p) => [...p, { text: transcript, type: "u" }]);
+                    
+                    setTimeout(() => {
+                        setIsAIResponding(true);
+                        setMessages((p) => [...p, { text: "How can I assist you today, sir?", type: "j" }]);
+                        
+                        const synth = window.speechSynthesis;
+                        synth.cancel(); 
+                        const utter = new SpeechSynthesisUtterance("How can I assist you today, sir?");
+                        const voices = synth.getVoices();
+                        const maxVoice = voices.find(v => v.name.includes("UK English Male") || v.name.includes("Daniel") || v.name.includes("Alex"));
+                        if (maxVoice) utter.voice = maxVoice;
+                        utter.rate = 0.92; utter.pitch = 0.85;
+                        utter.onend = () => setIsAIResponding(false);
+                        synth.speak(utter);
+                    }, 500);
+                } else {
+                    setCmdInput(transcript); 
+                    sendCmd(transcript); 
+                }
+            };
             r.onend = () => setListening(false);
             r.onerror = () => setListening(false);
             recogRef.current = r;
         }
+
+        // Fetch Dashboard Data
+        fetch("http://localhost:8000/api/dashboard")
+            .then(r => r.json())
+            .then(d => setDashData(d))
+            .catch(() => console.error("Failed to load dashboard data"));
+
+        // Poll GitHub Data Live
+        const fetchGit = async () => {
+            try {
+                const res = await fetch("http://localhost:8000/api/github");
+                const data = await res.json();
+                const pushEvents = data.events?.filter((e: any) => e.type === "PushEvent");
+                if (pushEvents && pushEvents.length > 0) {
+                    setGitEvent((prev: any) => {
+                        const latest = pushEvents[0];
+                        if (!prev || prev.id !== latest.id) {
+                            return latest;
+                        }
+                        return prev;
+                    });
+                }
+            } catch (e) {}
+        };
+        fetchGit();
+        const gitIv = setInterval(fetchGit, 20000); // 20s polling
+
+        return () => clearInterval(gitIv);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // GitHub Auto-Notifier
+    useEffect(() => {
+        if (gitEvent && gitEvent.repo) {
+            const repoName = gitEvent.repo.name.split("/").pop() || "unknown";
+            const commitMsg = gitEvent.payload?.commits?.[0]?.message || "Push event detected";
+            addActivity(`GITHUB → ${repoName} UPDATED`, "g");
+            
+            // Log it in the chat without speaking over the user
+            setMessages((p) => [...p, { text: `[NETWORK ALERT] Repository ${repoName} was updated: "${commitMsg}"`, type: "j" }]);
+        }
+    }, [gitEvent, addActivity]);
 
     // Live data interval
     useEffect(() => {
@@ -168,22 +250,103 @@ export function JarvisHUD() {
     // Auto-scroll chat
     useEffect(() => { chatRef.current?.scrollTo(0, chatRef.current.scrollHeight); }, [messages]);
 
-    const addActivity = useCallback((text: string, color: string) => {
-        const now = new Date().toTimeString().slice(0, 8);
-        setActivities((p) => [{ text, color, time: now }, ...p].slice(0, 12));
-    }, []);
-
-    const sendCmd = useCallback((text: string) => {
+    const sendCmd = useCallback(async (text: string) => {
         if (!text.trim()) return;
         setMessages((p) => [...p, { text, type: "u" }]);
         setCmdInput("");
         addActivity("USER → COMMAND", "g");
+        
+        setIsAIResponding(true);
+        const lowerT = text.toLowerCase();
+        let finalResponse = RESPONSES[respIdx.current % RESPONSES.length];
+        
+        try {
+            if (lowerT.includes("market") || lowerT.includes("stock") || lowerT.includes("portfolio")) {
+                addActivity("M.A.X. → ANALYZING MARKET", "b");
+                const res = await fetch("http://localhost:8000/api/market/ai-insights");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.data && data.data.market_overview) {
+                        const m = data.data.market_overview;
+                        const condition = m.condition || "Neutral";
+                        const sentiment = m.sentiment || "Unknown";
+                        const vix = m.vix ? m.vix.toFixed(2) : "Unknown";
+                        const recommendation = m.recommendation || "Maintain current strategy.";
+                        
+                        finalResponse = `Sir, the overall market condition is currently ${condition}. The generalized market sentiment is ${sentiment}, with the VIX volatility index at ${vix}. Based on my algorithmic analysis: ${recommendation}`;
+                    } else {
+                        finalResponse = "I accessed the market API, but the data feed is currently unstructured.";
+                    }
+                } else {
+                    finalResponse = "Sir, I am unable to authenticate with the market data provider. Please check your API key.";
+                }
+            }
+        } catch (e) {
+            finalResponse = "Network error while reaching secure market channels.";
+        }
+
         setTimeout(() => {
-            setMessages((p) => [...p, { text: RESPONSES[respIdx.current % RESPONSES.length], type: "j" }]);
+            setMessages((p) => [...p, { text: finalResponse, type: "j" }]);
             respIdx.current++;
             addActivity("M.A.X. → RESPONDED", "b");
-        }, 700 + Math.random() * 500);
+            
+            // Speak the response natively
+            const synth = window.speechSynthesis;
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(finalResponse);
+            const voices = synth.getVoices();
+            const maxVoice = voices.find(v => v.name.includes("UK English Male") || v.name.includes("Daniel") || v.name.includes("Alex"));
+            if (maxVoice) utter.voice = maxVoice;
+            utter.rate = 0.95; utter.pitch = 0.85;
+            utter.onend = () => setIsAIResponding(false);
+            synth.speak(utter);
+            
+        }, 800);
     }, [addActivity]);
+
+    const runDailyBriefing = useCallback(async () => {
+        setIsAIResponding(true);
+        addActivity("M.A.X. → FETCHING BRIEFING", "b");
+        
+        try {
+            // Attempt to hit real backend, fallback to local text if offline
+            const res = await fetch("http://localhost:8000/api/briefing").catch(() => null);
+            let data = res ? await res.json() : null;
+            
+            if (!data) {
+                data = { tasks: [ "You have 3 unread emails.", "Your next meeting is at 10:30 AM.", "VFX render due at 4:00 PM." ] };
+            }
+            
+            const tStr = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+            const dStr = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+            
+            let speechText = `Good morning, Anurag. It is ${tStr} on ${dStr}. `;
+            if (weather) {
+                speechText += `It is currently ${weather.temp} degrees and ${weather.description}. `;
+            }
+            data.tasks.forEach((t: string) => { speechText += `${t} `; });
+            
+            const synth = window.speechSynthesis;
+            synth.cancel(); // clear queue
+            const utter = new SpeechSynthesisUtterance(speechText);
+            
+            // Try to find a good authoritative voice
+            const voices = synth.getVoices();
+            const maxVoice = voices.find(v => v.name.includes("UK English Male") || v.name.includes("Daniel") || v.name.includes("Alex"));
+            if (maxVoice) utter.voice = maxVoice;
+            utter.rate = 0.92;
+            utter.pitch = 0.85; // slightly deeper robot
+            
+            utter.onend = () => setIsAIResponding(false);
+            
+            setMessages(p => [...p, { text: speechText, type: "j" }]);
+            synth.speak(utter);
+            
+        } catch (e) {
+            setIsAIResponding(false);
+            addActivity("CORE ERROR", "r");
+        }
+    }, [addActivity, weather]);
 
     const toggleMic = useCallback(() => {
         if (!recogRef.current) { addActivity("VOICE N/A", "w"); return; }
@@ -192,10 +355,8 @@ export function JarvisHUD() {
         if (listening) { r.stop(); } else { r.start(); setListening(true); }
     }, [listening, addActivity]);
 
-    const timeStr = time.toTimeString().slice(0, 8);
-    const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const dateStr = `${days[time.getDay()]}, ${String(time.getDate()).padStart(2, "0")} ${months[time.getMonth()]} ${time.getFullYear()}`;
+    const timeStr = time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase();
+    const dateStr = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(time);
 
     const WeatherIcon = weather ? getWeatherIcon(weather.icon) : null;
     const arcOffset = 283 * (1 - arcPct / 100);
@@ -222,8 +383,8 @@ export function JarvisHUD() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                         <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 10, letterSpacing: 4, color: "rgba(194,234,248,.4)" }}>SYSTEM CLOCK</div>
-                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 22, fontWeight: 700, color: "#00d4ff", letterSpacing: 4, textShadow: "0 0 20px #00d4ff", lineHeight: 1 }}>{timeStr}</div>
-                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.4)", letterSpacing: 2 }}>{dateStr}</div>
+                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 24, fontWeight: 700, color: "#00d4ff", letterSpacing: 2, textShadow: "0 0 20px #00d4ff", lineHeight: 1.2 }}>{timeStr}</div>
+                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 10, color: "rgba(194,234,248,.6)", letterSpacing: 1 }}>on {dateStr}</div>
                     </div>
                     <div style={{ display: "flex", gap: 16, alignItems: "center", justifyContent: "flex-end" }}>
                         <div className="j-sdot" />
@@ -236,226 +397,88 @@ export function JarvisHUD() {
                     </div>
                 </header>
 
-                {/* ── MAIN GRID ── */}
-                <div className="j-main">
-                    {/* LEFT COLUMN */}
-                    <div style={{ gridColumn: 1, gridRow: "1/3", display: "flex", flexDirection: "column", gap: 6 }}>
-                        {/* Arc power ring */}
-                        <div className="j-pn" style={{ paddingBottom: 4 }}>
-                            <div className="j-pn-lbl">arc power</div>
-                            <div style={{ padding: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                                <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <svg style={{ width: 110, height: 110, transform: "rotate(-90deg)" }} viewBox="0 0 110 110">
-                                        <circle fill="none" stroke="rgba(0,212,255,.1)" strokeWidth="8" strokeLinecap="round" cx="55" cy="55" r="45" />
-                                        <circle fill="none" stroke="#00d4ff" strokeWidth="8" strokeLinecap="round" cx="55" cy="55" r="45"
-                                            strokeDasharray="283" strokeDashoffset={arcOffset} style={{ filter: "drop-shadow(0 0 6px #00d4ff)", transition: "stroke-dashoffset .8s ease" }} />
-                                    </svg>
-                                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 16, color: "#00d4ff", textShadow: "0 0 12px #00d4ff" }}>{arcPct}%</div>
-                                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 8, color: "rgba(194,234,248,.4)", letterSpacing: 1 }}>POWER</div>
+                {/* ── CENTRAL VOICE AI LAYOUT ── */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "60px", position: "relative", zIndex: 10, padding: "0 50px" }}>
+
+                    {/* Giant Core (Left) - Main Focus */}
+                    <div onClick={() => runDailyBriefing()} style={{ cursor: "pointer", transition: "transform 0.3s", flexShrink: 0 }}>
+                        <AudioVisualizerRing size={550} isListening={listening} isActive={isAIResponding} />
+                    </div>
+
+                    {/* Conversation Box (Right) - Shrunk & Unobtrusive */}
+                    <div style={{ display: "flex", flexDirection: "column", width: "320px", flexShrink: 0, background: "rgba(0,10,20,0.3)", border: "1px solid rgba(0,212,255,0.05)", borderRadius: 6, padding: 15, boxShadow: "0 0 15px rgba(0,0,0,0.6)" }}>
+                        
+                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 9, letterSpacing: 2, color: "rgba(0,212,255,0.3)", marginBottom: 12, borderBottom: "1px solid rgba(0,212,255,0.05)", paddingBottom: 6 }}>
+                            SECURE COMMS LINK ACTIVE
+                        </div>
+
+                        {/* Chat Feed */}
+                        <div ref={chatRef} style={{ width: "100%", height: "200px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, scrollbarWidth: "none" }}>
+                            {messages.map((m, i) => (
+                                <div key={i} style={{ display: "flex", gap: 8, width: "100%" }}>
+                                    <div style={{ fontSize: 9, alignSelf: "flex-start", color: m.type === "j" ? "#00d4ff" : "rgba(194,234,248,.3)", fontFamily: "var(--font-mono)", flexShrink: 0, width: "40px", marginTop: 2 }}>
+                                        {m.type === "j" ? "M.A.X." : "USER"}
+                                    </div>
+                                    <div style={{ fontSize: 11, lineHeight: 1.4, color: m.type === "j" ? "rgba(0,212,255,0.9)" : "rgba(194,234,248,.6)", fontFamily: "var(--font-mono)" }}>
+                                        <HackerText text={m.text} speed={15} />{m.type === "j" && i === messages.length - 1 && <span className="j-cblink" />}
                                     </div>
                                 </div>
-                            </div>
-                            {/* Stats */}
-                            {[
-                                { label: "TEMP", value: `${tempVal}°C`, cls: "g" },
-                                { label: "VOLTAGE", value: `${voltVal}V`, cls: "" },
-                                { label: "OUTPUT", value: `${outVal}W`, cls: "w" },
-                            ].map((s) => (
-                                <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid rgba(0,212,255,.06)" }}>
-                                    <span style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.4)", letterSpacing: 1 }}>{s.label}</span>
-                                    <span style={{
-                                        fontFamily: "var(--font-orbitron),sans-serif", fontSize: 11,
-                                        color: s.cls === "g" ? "#00ff9d" : s.cls === "w" ? "#ffb300" : "#00d4ff",
-                                        textShadow: `0 0 8px ${s.cls === "g" ? "#00ff9d" : s.cls === "w" ? "#ffb300" : "#00d4ff"}`
-                                    }}>{s.value}</span>
-                                </div>
                             ))}
                         </div>
 
-                        {/* CPU / MEM / GPU rings */}
-                        <div className="j-pn" style={{ padding: 8, flex: 1 }}>
-                            <div className="j-pn-lbl">cpu / mem / gpu</div>
-                            <div style={{ display: "flex", justifyContent: "space-around", padding: "8px 0", gap: 4 }}>
-                                <RingGauge value={cpu} size={56} color="#00d4ff" label="CPU" />
-                                <RingGauge value={mem} size={56} color="#00ff9d" label="MEM" />
-                                <RingGauge value={gpu} size={56} color="#ffb300" label="GPU" />
-                            </div>
-                            {[
-                                { label: "NETWORK ↑", value: `${netUp} MB/s`, cls: "" },
-                                { label: "NETWORK ↓", value: `${netDn} MB/s`, cls: "g" },
-                                { label: "PING", value: `${pingVal}ms`, cls: "w" },
-                                { label: "PROCESSES", value: String(procVal), cls: "" },
-                            ].map((s) => (
-                                <div key={s.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid rgba(0,212,255,.06)" }}>
-                                    <span style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.4)", letterSpacing: 1 }}>{s.label}</span>
-                                    <span style={{
-                                        fontFamily: "var(--font-orbitron),sans-serif", fontSize: 11,
-                                        color: s.cls === "g" ? "#00ff9d" : s.cls === "w" ? "#ffb300" : "#00d4ff",
-                                        textShadow: `0 0 8px ${s.cls === "g" ? "#00ff9d" : s.cls === "w" ? "#ffb300" : "#00d4ff"}`
-                                    }}>{s.value}</span>
-                                </div>
-                            ))}
+                        {/* Input Area */}
+                        <div style={{ width: "100%", display: "flex", border: "1px solid rgba(0,212,255,0.2)", borderRadius: 3, padding: "8px 10px", background: "rgba(0,20,35,0.4)", marginTop: 15, alignItems: "center" }}>
+                            <span style={{ color: "#00d4ff", opacity: 0.6, fontSize: 10 }}>&gt;</span>
+                            <input type="text" placeholder="Command..."
+                                   style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#00d4ff", fontFamily: "var(--font-mono)", fontSize: 10, marginLeft: 8 }}
+                                   value={cmdInput} onChange={(e) => setCmdInput(e.target.value)}
+                                   onKeyDown={(e) => { if (e.key === "Enter") sendCmd(cmdInput); }} autoComplete="off" />
+                            <button onClick={isAIResponding ? () => {} : toggleMic} style={{
+                                background: isAIResponding ? "rgba(0,255,255,0.1)" : listening ? "rgba(255,59,59,0.8)" : "transparent",
+                                color: isAIResponding ? "#00ffff" : listening ? "#fff" : "rgba(0,212,255,0.5)",
+                                padding: "4px 8px", border: listening ? "1px solid #ff3b3b" : "1px solid rgba(0,212,255,0.2)",
+                                fontFamily: "var(--font-mono)", fontSize: 8, cursor: "pointer", marginLeft: 8, letterSpacing: 1, borderRadius: 2
+                            }}>
+                                {listening ? "REC" : isAIResponding ? "SPK" : "MIC"}
+                            </button>
                         </div>
                     </div>
 
-                    {/* CENTER TOP — Reactor + Charts */}
-                    <div className="j-pn" style={{ gridColumn: 2, gridRow: 1, display: "flex", gap: 6 }}>
-                        <div style={{ flex: "0 0 220px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                            <div className="j-pn-lbl" style={{ alignSelf: "flex-start", padding: "8px 0 0 10px" }}>arc reactor</div>
-                            <div className="j-reactor">
-                                <div className="j-ro j-ro1" /><div className="j-ro j-ro2" /><div className="j-ro j-ro3" /><div className="j-ro j-ro4" />
-                                <div className="j-halo" /><div className="j-halo" /><div className="j-halo" />
-                                <div className="j-core" />
-                            </div>
-                            <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 9, letterSpacing: 3, color: "rgba(194,234,248,.4)", marginTop: 8 }}>POWER CORE</div>
-                            <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 20, fontWeight: 700, color: "#00d4ff", textShadow: "0 0 20px #00d4ff", lineHeight: 1 }}>{reactorPower}%</div>
-                        </div>
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, padding: "6px 0" }}>
-                            <SparklineChart data={cpuData} color="#00d4ff" fillColor="rgba(0,212,255,.2)" min={0} max={100} title="CPU LOAD — REAL-TIME" />
-                            <SparklineChart data={netData} color="#00ff9d" fillColor="rgba(0,255,157,.15)" min={0} max={10} title="NETWORK THROUGHPUT (MB/s)" />
-                            <SparklineChart data={memData} color="#ffb300" fillColor="rgba(255,179,0,.15)" min={50} max={100} title="MEMORY USAGE (%)" />
-                        </div>
-                    </div>
-
-                    {/* CENTER BOTTOM */}
-                    <div style={{ gridColumn: 2, gridRow: 2, display: "flex", gap: 6 }}>
-                        <div className="j-pn" style={{ flex: 1, padding: "8px 12px" }}>
-                            <div className="j-pn-lbl">system health — 60s history</div>
-                            <HealthChart data={healthData} />
-                        </div>
-                        <div style={{ flex: "0 0 150px", display: "flex", flexDirection: "column", gap: 6 }}>
-                            {[
-                                { label: "UPTIME", value: "14d 7h", trend: "▲ STABLE", cls: "" },
-                                { label: "TASKS DONE", value: "247", trend: "+3 TODAY", cls: "go" },
-                                { label: "ALERTS", value: "2", trend: "LOW PRIORITY", cls: "warn" },
-                                { label: "API CALLS", value: apiCount.toLocaleString(), trend: "SESSION", cls: "" },
-                            ].map((c) => (
-                                <div key={c.label} className={`j-stat-card ${c.cls}`}>
-                                    <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 8, color: "rgba(194,234,248,.4)", letterSpacing: 2 }}>{c.label}</div>
-                                    <div style={{
-                                        fontFamily: "var(--font-orbitron),sans-serif", fontSize: 20, fontWeight: 700, lineHeight: 1,
-                                        color: c.cls === "go" ? "#00ff9d" : c.cls === "warn" ? "#ffb300" : "#00d4ff",
-                                        textShadow: `0 0 12px ${c.cls === "go" ? "#00ff9d" : c.cls === "warn" ? "#ffb300" : "#00d4ff"}`
-                                    }}>{c.value}</div>
-                                    <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.4)" }}>{c.trend}</div>
+                    {/* TASKS HUD overlay around the edges */}
+                    <div style={{ position: "absolute", bottom: 40, left: 60 }}>
+                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", color: "rgba(0,212,255,0.6)", fontSize: 11, marginBottom: 15, letterSpacing: 3 }}>URGENT TASKS</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            {dashData.tasks.map((task: any, i: number) => (
+                                <div key={i} style={{ display: "flex", gap: 20 }}>
+                                    <span style={{ fontFamily: "var(--font-mono),monospace", color: task.status === 'urgent' ? "#ff3b3b" : "rgba(194,234,248,.8)", fontSize: 11 }}>
+                                        <HackerText text={task.title} speed={25} delay={i * 200} />
+                                    </span>
+                                    <span style={{ fontFamily: "var(--font-mono),monospace", color: task.status === 'urgent' ? "#ff3b3b" : "#ffb300", fontSize: 10 }}>[{task.status.toUpperCase()}]</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN */}
-                    <div style={{ gridColumn: 3, gridRow: "1/3", display: "flex", flexDirection: "column", gap: 6 }}>
-                        {/* Radar */}
-                        <div className="j-pn" style={{ padding: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <div className="j-pn-lbl" style={{ alignSelf: "flex-start", width: "100%", marginBottom: 4 }}>threat radar</div>
-                            <Radar />
-                            <div style={{ display: "flex", gap: 10, fontFamily: "var(--font-mono),monospace", fontSize: 8, marginTop: 4 }}>
-                                <span style={{ color: "#00d4ff" }}>● SYS</span>
-                                <span style={{ color: "#ff3b3b" }}>● NET</span>
-                                <span style={{ color: "#ffb300" }}>● EXT</span>
-                            </div>
-                        </div>
-
-                        {/* Weather mini-panel */}
-                        {weather && (
-                            <div className="j-pn" style={{ padding: 8 }}>
-                                <div className="j-pn-lbl">weather</div>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0" }}>
-                                    {WeatherIcon && <WeatherIcon style={{ width: 18, height: 18, color: "#00d4ff", opacity: 0.6 }} />}
-                                    <div>
-                                        <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{weather.temp}°C</div>
-                                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 8, color: "rgba(194,234,248,.4)", textTransform: "capitalize" }}>{weather.description}</div>
-                                    </div>
-                                    <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-                                        <MapPin style={{ width: 10, height: 10, color: "rgba(0,212,255,.4)" }} />
-                                        <span style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.6)" }}>{weather.city}</span>
-                                    </div>
+                    {/* GITHUB NETWORK overlay */}
+                    {gitEvent && gitEvent.repo && (
+                        <div style={{ position: "absolute", bottom: 40, right: 60, textAlign: "right" }}>
+                            <div style={{ fontFamily: "var(--font-orbitron),sans-serif", color: "rgba(0,212,255,0.6)", fontSize: 11, marginBottom: 15, letterSpacing: 3 }}>GITHUB NETWORK</div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+                                <div style={{ display: "flex", gap: 15 }}>
+                                    <span style={{ fontFamily: "var(--font-mono),monospace", color: "#00ff9d", fontSize: 10 }}>[PUSH DETECTED]</span>
+                                    <span style={{ fontFamily: "var(--font-mono),monospace", color: "rgba(194,234,248,.8)", fontSize: 11 }}>
+                                        <HackerText text={gitEvent.repo.name} speed={20} />
+                                    </span>
                                 </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4 }}>
-                                    {[
-                                        { Icon: Thermometer, label: "Feels", value: `${weather.feels_like}°`, color: "#f59e0b" },
-                                        { Icon: Droplets, label: "Humidity", value: `${weather.humidity}%`, color: "#3b82f6" },
-                                        { Icon: Wind, label: "Wind", value: `${weather.wind_speed}km`, color: "#10b981" },
-                                        { Icon: Sunrise, label: "Rise", value: fmtTime(weather.sunrise), color: "#f97316" },
-                                    ].map((s) => (
-                                        <div key={s.label} style={{ textAlign: "center" }}>
-                                            <s.Icon style={{ width: 10, height: 10, margin: "0 auto 2px", color: s.color, opacity: 0.6 }} />
-                                            <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, fontWeight: 500, color: "#e2e8f0" }}>{s.value}</div>
-                                            <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 7, color: "rgba(100,116,139,.7)", textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
-                                        </div>
-                                    ))}
+                                <div style={{ fontFamily: "var(--font-mono),monospace", color: "rgba(194,234,248,.4)", fontSize: 9, maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                   {gitEvent.payload?.commits?.[0]?.message || 'Code pushed to branch'}
+                                </div>
+                                <div style={{ fontFamily: "var(--font-mono),monospace", color: "rgba(194,234,248,.3)", fontSize: 8, marginTop: 4 }}>
+                                   T-MINUS {new Date().toLocaleTimeString()}
                                 </div>
                             </div>
-                        )}
-
-                        {/* Activity log */}
-                        <div className="j-pn" style={{ flex: 1, overflow: "hidden", padding: "0 8px 8px" }}>
-                            <div className="j-pn-lbl" style={{ marginBottom: 4 }}>activity log</div>
-                            <div style={{ overflow: "hidden", height: "calc(100% - 28px)" }}>
-                                {activities.map((a, i) => (
-                                    <div key={i} className="j-act-item">
-                                        <div style={{
-                                            width: 5, height: 5, borderRadius: "50%", marginTop: 4, flexShrink: 0,
-                                            background: a.color === "b" ? "#00d4ff" : a.color === "g" ? "#00ff9d" : a.color === "w" ? "#ffb300" : "#ff3b3b",
-                                            boxShadow: `0 0 6px ${a.color === "b" ? "#00d4ff" : a.color === "g" ? "#00ff9d" : a.color === "w" ? "#ffb300" : "#ff3b3b"}`
-                                        }} />
-                                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 9, color: "rgba(194,234,248,.4)", lineHeight: 1.5 }}>{a.text}</div>
-                                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 8, color: "rgba(194,234,248,.25)", marginLeft: "auto", flexShrink: 0 }}>{a.time}</div>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* ── BOTTOM BAR ── */}
-                <div style={{ flex: "0 0 100px", display: "flex", gap: 6 }}>
-                    {/* Command input */}
-                    <div className="j-pn" style={{ flex: 1, padding: "8px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ fontFamily: "var(--font-orbitron),sans-serif", fontSize: 11, color: "#00d4ff", letterSpacing: 2, textShadow: "0 0 10px #00d4ff", flexShrink: 0 }}>M.A.X. &gt;</div>
-                            <input className="j-cmd-field" type="text" placeholder="Enter command or ask anything, Anurag…"
-                                value={cmdInput} onChange={(e) => setCmdInput(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === "Enter") sendCmd(cmdInput); }} autoComplete="off" />
-                        </div>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            {["STATUS", "DIAGNOSTICS", "CAREFLOW", "THREAT", "NETWORK", "GREET"].map((c) => (
-                                <button key={c} className="j-chip" onClick={() => sendCmd(
-                                    c === "STATUS" ? "System status report" : c === "DIAGNOSTICS" ? "Run full diagnostics" :
-                                        c === "CAREFLOW" ? "Show CareFlow health" : c === "THREAT" ? "Threat scan" :
-                                            c === "NETWORK" ? "Network analysis" : "Hey M.A.X."
-                                )}>{c}</button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Chat */}
-                    <div className="j-pn" ref={chatRef} style={{ flex: "0 0 280px", padding: "8px 10px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, scrollbarWidth: "thin", scrollbarColor: "#006080 transparent" }}>
-                        {messages.map((m, i) => (
-                            <div key={i} className="j-msg">
-                                <div style={{
-                                    width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                                    fontFamily: "var(--font-orbitron),sans-serif", fontSize: 7, flexShrink: 0, marginTop: 1, color: "#010d14",
-                                    background: m.type === "j" ? "radial-gradient(circle,#00d4ff,#006080)" : "radial-gradient(circle,#ffb300,#7a4e00)",
-                                    boxShadow: m.type === "j" ? "0 0 8px #00d4ff" : "0 0 8px #ffb300"
-                                }}>
-                                    {m.type === "j" ? "AI" : "YOU"}
-                                </div>
-                                <div style={{ fontSize: 12, lineHeight: 1.55, flex: 1, color: m.type === "j" ? "#00d4ff" : "rgba(194,234,248,.4)" }}>
-                                    {m.text}{m.type === "j" && <span className="j-cblink" />}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Mic */}
-                    <div className="j-pn" style={{ flex: "0 0 100px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                        <button className={`j-mic-btn ${listening ? "on" : ""}`} onClick={toggleMic}>🎙</button>
-                        <div style={{ fontFamily: "var(--font-mono),monospace", fontSize: 8, color: "rgba(194,234,248,.4)", letterSpacing: 2 }}>
-                            {listening ? "LISTENING…" : "TAP TO SPEAK"}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>

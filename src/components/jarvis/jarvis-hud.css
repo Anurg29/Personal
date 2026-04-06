@@ -91,16 +91,57 @@
   padding:3px 12px;cursor:pointer;letter-spacing:1px;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);transition:all .2s }
 .j-chip:hover{color:#00d4ff;border-color:#00d4ff;background:rgba(0,212,255,.08);box-shadow:0 0 12px rgba(0,212,255,.2)}
 
-/* ── MIC BUTTON ── */
-.j-mic-btn { width:54px;height:54px;border-radius:50%;border:2px solid #00d4ff;
-  background:radial-gradient(circle,rgba(0,212,255,.15),transparent);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-  box-shadow:0 0 20px rgba(0,212,255,.4),inset 0 0 15px rgba(0,212,255,.07);transition:all .2s;position:relative }
-.j-mic-btn::before { content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(0,212,255,.25);animation:j-micring 2s ease-in-out infinite }
-@keyframes j-micring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.1);opacity:.2}}
-.j-mic-btn:hover{transform:scale(1.1);box-shadow:0 0 40px #00d4ff,inset 0 0 25px rgba(0,212,255,.2)}
-.j-mic-btn.on{border-color:#ff3b3b;box-shadow:0 0 30px rgba(255,59,59,.5);animation:j-micpulse .7s ease-in-out infinite}
-@keyframes j-micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+/* ── VOICE ORB ── */
+.j-voice-orb {
+  position: relative; width: 64px; height: 64px; border-radius: 50%;
+  border: none; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  outline: none; transition: all 0.3s ease;
+}
+.j-voice-orb .orb-core {
+  position: absolute; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #00d4ff;
+  background: radial-gradient(circle, rgba(0,212,255,0.4), transparent);
+  box-shadow: 0 0 20px rgba(0,212,255,0.4), inset 0 0 15px rgba(0,212,255,0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 3;
+}
+.j-voice-orb::before {
+    content:'🎙'; font-size: 20px; z-index: 4; position: absolute; color: #fff; text-shadow: 0 0 8px #00d4ff; transition: all 0.2s;
+}
+.j-voice-orb .orb-ring {
+  position: absolute; width: 100%; height: 100%; border-radius: 50%;
+  border: 1px solid rgba(0,212,255,0.3); opacity: 0; z-index: 1; pointer-events: none;
+}
+.j-voice-orb:hover .orb-core { transform: scale(1.1); box-shadow: 0 0 40px #00d4ff, inset 0 0 25px rgba(0,212,255,0.3); }
+
+/* Listening State */
+.j-voice-orb.listening .orb-core {
+  border-color: #00ff9d; background: radial-gradient(circle, rgba(0,255,157,0.3), transparent);
+  box-shadow: 0 0 30px rgba(0,255,157,0.6); animation: orb-pulse-listen 1.2s ease-in-out infinite alternate;
+}
+.j-voice-orb.listening::before { content: '👂'; }
+.j-voice-orb.listening .orb-ring.ring1 { border-color: rgba(0,255,157,0.6); animation: orb-ripple 1.5s linear infinite; }
+.j-voice-orb.listening .orb-ring.ring2 { border-color: rgba(0,255,157,0.4); animation: orb-ripple 1.5s linear infinite 0.75s; }
+
+/* Speaking / AI Active State */
+.j-voice-orb.speaking .orb-core {
+  border-color: #00d4ff; background: radial-gradient(circle, rgba(0,212,255,0.6), transparent);
+  animation: orb-speak 0.4s infinite alternate; box-shadow: 0 0 40px rgba(0,212,255,0.8);
+}
+.j-voice-orb.speaking::before { content: '✧'; font-size: 24px; animation: orb-spin 2s linear infinite; }
+.j-voice-orb.speaking .orb-ring { border-color: rgba(0,212,255,0.8); animation: orb-ripple 1s linear infinite; }
+
+@keyframes orb-pulse-listen { from { transform: scale(0.95); } to { transform: scale(1.1); } }
+@keyframes orb-speak { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.15); opacity: 1; } }
+@keyframes orb-ripple { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+@keyframes orb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── LIST PANELS ── */
+.j-task-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.j-task-item { display: flex; align-items: stretch; background: rgba(0,212,255,.03); border: 1px solid rgba(0,212,255,.1); padding: 8px 10px; position: relative; }
+.j-task-item::before { content: ''; width: 3px; background: #ff3b3b; position: absolute; left: 0; top: 0; bottom: 0; box-shadow: 0 0 8px #ff3b3b; }
+.j-task-item.urgent::before { background: #ff3b3b; box-shadow: 0 0 8px #ff3b3b; }
+.j-task-item.pending::before { background: #ffb300; box-shadow: 0 0 8px #ffb300; }
+.j-task-item.ongoing::before { background: #00d4ff; box-shadow: 0 0 8px #00d4ff; }
 
 /* ── CHAT ── */
 .j-msg { display:flex;gap:8px;animation:j-msgin .35s ease-out both }

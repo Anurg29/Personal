@@ -100,5 +100,23 @@ class MarketAlert(Base):
     triggered_at = Column(DateTime, nullable=True)
 
 
+class UrgentTask(Base):
+    __tablename__ = "urgent_tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    due_date = Column(DateTime, nullable=True)
+    status = Column(String, default="pending") # urgent, pending, ongoing, complete
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class StrategicGoal(Base):
+    __tablename__ = "strategic_goals"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    status_text = Column(String, nullable=False) # e.g. "85%", "+12%", "HOLD"
+    color = Column(String, nullable=False)       # e.g. "#00d4ff"
+    subtitle = Column(String, nullable=True)     # e.g. "Alpha Release"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Create tables
 Base.metadata.create_all(bind=engine)

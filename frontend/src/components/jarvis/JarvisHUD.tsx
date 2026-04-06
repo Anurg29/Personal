@@ -257,32 +257,30 @@ export function JarvisHUD() {
         addActivity("USER → COMMAND", "g");
         
         setIsAIResponding(true);
-        const lowerT = text.toLowerCase();
         let finalResponse = RESPONSES[respIdx.current % RESPONSES.length];
         
         try {
-            if (lowerT.includes("market") || lowerT.includes("stock") || lowerT.includes("portfolio")) {
-                addActivity("M.A.X. → ANALYZING MARKET", "b");
-                const res = await fetch("http://localhost:8000/api/market/ai-insights");
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.success && data.data && data.data.market_overview) {
-                        const m = data.data.market_overview;
-                        const condition = m.condition || "Neutral";
-                        const sentiment = m.sentiment || "Unknown";
-                        const vix = m.vix ? m.vix.toFixed(2) : "Unknown";
-                        const recommendation = m.recommendation || "Maintain current strategy.";
-                        
-                        finalResponse = `Sir, the overall market condition is currently ${condition}. The generalized market sentiment is ${sentiment}, with the VIX volatility index at ${vix}. Based on my algorithmic analysis: ${recommendation}`;
-                    } else {
-                        finalResponse = "I accessed the market API, but the data feed is currently unstructured.";
-                    }
+            addActivity("M.A.X. → ANALYZING QUERY", "b");
+            // Direct link to the synchronous Groq-powered Chat API!
+            const res = await fetch("http://localhost:8000/api/chat/sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messages: [{ role: "user", content: text }] })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.reply) {
+                    finalResponse = data.reply.replace(/[*_#`~>]/g, '');
                 } else {
-                    finalResponse = "Sir, I am unable to authenticate with the market data provider. Please check your API key.";
+                    finalResponse = "Sir, my neural net encountered an error while processing that data.";
                 }
+            } else {
+                finalResponse = "Sir, I am unable to authenticate with the core API. Please check your network.";
             }
         } catch (e) {
-            finalResponse = "Network error while reaching secure market channels.";
+            // This catches HTTPS -> HTTP mixed content errors when running on GitHub Pages
+            finalResponse = "Network error while reaching secure channels. The local backend server may be offline or blocked by your browser.";
         }
 
         setTimeout(() => {

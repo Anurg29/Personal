@@ -220,6 +220,24 @@ async def chat_stream(req: ChatRequest):
         detail="AI models are currently offline. Please try again.",
     )
 
+@router.post("/chat/sync")
+async def chat_sync(req: ChatRequest):
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Groq API key not configured")
+
+    lc_messages = _to_langchain_messages(req.messages)
+
+    for model_id in GROQ_MODELS:
+        try:
+            chat = _build_llm(model_id)
+            response = await chat.ainvoke(lc_messages)
+            return {"success": True, "reply": response.content}
+        except Exception as e:
+            print(f"Chat Sync Error ({model_id}):", e)
+            continue
+
+    return {"success": False, "reply": "My neural net is currently offline. Diagnostics engaged."}
+
 
 async def _stream_langchain(
     chat: ChatGroq, messages: list

@@ -118,5 +118,33 @@ class StrategicGoal(Base):
     subtitle = Column(String, nullable=True)     # e.g. "Alpha Release"
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+class ApplicationStatus(str, enum.Enum):
+    APPLIED = "applied"
+    ASSESSMENT = "assessment"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+
+
+class JobApplication(Base):
+    __tablename__ = "job_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False)
+    platform = Column(String, nullable=False, index=True)  # LinkedIn, Indeed, Naukri, etc.
+    status = Column(SQLEnum(ApplicationStatus), nullable=False, default=ApplicationStatus.APPLIED)
+    location = Column(String, nullable=True)
+    salary_range = Column(String, nullable=True)
+    applied_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    follow_up_date = Column(DateTime, nullable=True)
+    notes = Column(String, nullable=True)
+    job_url = Column(String, nullable=True)
+    contact_person = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 # Create tables
 Base.metadata.create_all(bind=engine)

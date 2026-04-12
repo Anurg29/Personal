@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Github, MessageSquare, GraduationCap, ArrowRight } from "lucide-react";
+import { Github, MessageSquare, GraduationCap, ArrowRight, BriefcaseBusiness } from "lucide-react";
 import { HUDCard } from "@/components/ui/HUDCard";
 
 const cards = [
@@ -27,11 +27,18 @@ const cards = [
     icon: GraduationCap,
     accent: "from-green-500/20 to-jarvis-cyan/20",
   },
+  {
+    href: "/applications",
+    title: "Job Tracker",
+    description: "Track applications from any platform and monitor your hiring pipeline",
+    icon: BriefcaseBusiness,
+    accent: "from-amber-500/20 to-cyan-500/20",
+  },
 ];
 
 export function NavCards() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
       {cards.map((card, i) => (
         <motion.div
           key={card.href}

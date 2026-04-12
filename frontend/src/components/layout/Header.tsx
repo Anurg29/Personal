@@ -10,6 +10,7 @@ import {
   MessageSquare,
   GraduationCap,
   BarChart3,
+  BriefcaseBusiness,
   LogOut,
   Zap,
   Monitor,
@@ -26,6 +27,7 @@ const assistantLinks = [
   { href: "/jarvis", label: "HUD", icon: Monitor },
   { href: "/github", label: "GitHub", icon: Github },
   { href: "/market", label: "Market", icon: BarChart3 },
+  { href: "/applications", label: "Jobs", icon: BriefcaseBusiness },
   { href: "/chat", label: "J.A.R.V.I.S.", icon: MessageSquare },
   { href: "/academic", label: "Academic", icon: GraduationCap },
 ];

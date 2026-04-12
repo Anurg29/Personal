@@ -5,6 +5,7 @@ import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
+import { MemoryControlPanel } from "@/components/chat/MemoryControlPanel";
 import { Bot, Trash2 } from "lucide-react";
 
 export function ChatInterface() {
@@ -54,6 +55,8 @@ export function ChatInterface() {
       </div>
 
       {/* Messages area */}
+      <MemoryControlPanel />
+
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto space-y-4 pr-2"

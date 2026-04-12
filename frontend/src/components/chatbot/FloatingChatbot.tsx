@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Sparkles } from "lucide-react";
+import { MessageSquare, X, Send, Sparkles, Shield, Mic } from "lucide-react";
 import { useMode } from "@/lib/ModeContext";
+import { useVoiceLock } from "@/hooks/useVoiceLock";
 
 interface Message {
     role: "user" | "max";
@@ -24,6 +25,15 @@ function isExit(text: string) {
 
 export function FloatingChatbot() {
     const { mode, triggerTransformation, exitAssistant } = useMode();
+    const {
+        voiceLockSupported,
+        hasVoiceProfile,
+        isVoiceLockEnabled,
+        voiceLockBusy,
+        voiceLockError,
+        enrollVoice,
+        setVoiceLockEnabled,
+    } = useVoiceLock();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -318,6 +328,42 @@ export function FloatingChatbot() {
 
                         {/* Input */}
                         <div className="p-3 border-t border-[rgba(0,212,255,0.15)]">
+                            <div className="mb-2 flex items-center justify-between text-[11px] text-[#94a3b8]">
+                                <div className="flex items-center gap-1.5">
+                                    <Shield className="w-3.5 h-3.5 text-[#00d4ff]" />
+                                    <span>
+                                        Voice Lock: {isVoiceLockEnabled ? "Enabled" : "Disabled"}
+                                    </span>
+                                </div>
+                                {voiceLockSupported && (
+                                    <div className="flex items-center gap-2">
+                                        {!hasVoiceProfile ? (
+                                            <button
+                                                onClick={async () => {
+                                                    const ok = await enrollVoice();
+                                                    if (ok) setVoiceLockEnabled(true);
+                                                }}
+                                                disabled={voiceLockBusy}
+                                                className="px-2 py-1 rounded-md bg-[rgba(0,212,255,0.12)] border border-[rgba(0,212,255,0.3)] text-[#00d4ff] disabled:opacity-50"
+                                            >
+                                                <Mic className="w-3 h-3 inline mr-1" />
+                                                Enroll Voice
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => setVoiceLockEnabled(!isVoiceLockEnabled)}
+                                                className="px-2 py-1 rounded-md bg-[rgba(0,212,255,0.12)] border border-[rgba(0,212,255,0.3)] text-[#00d4ff]"
+                                            >
+                                                {isVoiceLockEnabled ? "Disable" : "Enable"}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {voiceLockError && (
+                                <div className="mb-2 text-[11px] text-red-300">{voiceLockError}</div>
+                            )}
+
                             <div className="flex items-center gap-2">
                                 <input
                                     type="text"

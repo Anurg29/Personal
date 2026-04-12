@@ -9,10 +9,27 @@ import { CommandPalette } from "@/components/command/CommandPalette";
 import { ParticleBackground } from "@/components/widgets/ParticleBackground";
 import { StickyNotes } from "@/components/widgets/StickyNotes";
 import { PomodoroTimer } from "@/components/widgets/PomodoroTimer";
+import { useWakeWordActivation } from "@/hooks/useWakeWordActivation";
+import { useVoiceLock } from "@/hooks/useVoiceLock";
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
-    const { mode } = useMode();
+    const { mode, triggerTransformation } = useMode();
     const isAssistant = mode === "assistant";
+    const { verifyCurrentSpeaker } = useVoiceLock();
+
+    const customWakePhrase = process.env.NEXT_PUBLIC_MAX_WAKE_PHRASE?.trim();
+    const wakePhrases = customWakePhrase ? [customWakePhrase] : ["hey max", "hey max anurag"];
+
+    useWakeWordActivation({
+        enabled: mode === "portfolio",
+        wakePhrases,
+        verifySpeaker: verifyCurrentSpeaker,
+        onWake: () => {
+            if (mode === "portfolio") {
+                triggerTransformation();
+            }
+        },
+    });
 
     return (
         <>
